@@ -1,0 +1,23 @@
+from datetime import datetime
+
+from sqlalchemy.orm import Session
+
+from app.models import RefreshToken
+
+
+def create_refresh_token(db: Session, *, user_id: int, token_hash: str, expires_at: datetime) -> RefreshToken:
+    refresh_token = RefreshToken(user_id=user_id, token_hash=token_hash, expires_at=expires_at)
+    db.add(refresh_token)
+    return refresh_token
+
+
+def get_active_refresh_token(db: Session, token_hash: str) -> RefreshToken | None:
+    return (
+        db.query(RefreshToken)
+        .filter(RefreshToken.token_hash == token_hash, RefreshToken.revoked.is_(False))
+        .first()
+    )
+
+
+def revoke_refresh_token(refresh_token: RefreshToken) -> None:
+    refresh_token.revoked = True

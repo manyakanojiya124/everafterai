@@ -23,11 +23,11 @@ class RefreshToken(Base):
         nullable=False
     )
 
-    token = Column(String(500), nullable=False, unique=True)
+    token_hash = Column(String(64), nullable=False, unique=True, index=True)
 
     expires_at = Column(DateTime(timezone=True), nullable=False)
 
-    revoked = Column(Boolean, default=False)
+    revoked = Column(Boolean, default=False, server_default="false", nullable=False)
 
     created_at = Column(
         DateTime(timezone=True),

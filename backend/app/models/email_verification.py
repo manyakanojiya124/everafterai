@@ -25,7 +25,7 @@ class EmailVerificationToken(Base):
 
     token = Column(String(255), unique=True, nullable=False)
 
-    used = Column(Boolean, default=False)
+    used = Column(Boolean, default=False, server_default="false", nullable=False)
 
     expires_at = Column(DateTime(timezone=True), nullable=False)
 

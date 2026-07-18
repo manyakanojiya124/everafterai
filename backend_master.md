@@ -7,7 +7,7 @@ FILE: main.py
 ```python
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.staticfiles import StaticFiles
 from app.api.v1.auth import router as auth_router
 from app.api.v1.users import router as users_router
 from app.core.config import settings
@@ -16,7 +16,11 @@ import app.db.base  # Ensure all SQLAlchemy models are registered before request
 app = FastAPI(
     title="EverAfter AI"
 )
-
+app.mount(
+    "/uploads",
+    StaticFiles(directory="uploads"),
+    name="uploads",
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()],
@@ -51,6 +55,7 @@ from app.core.config import settings
 from app.db.database import get_db
 from app.schemas.auth import (
     AuthResponse,
+    GoogleAuthRequest,
     LoginRequest,
     MessageResponse,
     RegistrationResponse,
@@ -67,6 +72,7 @@ from app.services.auth_service import (
     send_email_verification,
     verify_email_otp,
 )
+from app.services.oauth_service import authenticate_with_google
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 REFRESH_COOKIE_NAME = "everafter_refresh_token"
@@ -123,6 +129,26 @@ def refresh(
     _set_refresh_cookie(response, new_refresh_token)
     return payload
 
+@router.post(
+    "/google",
+    response_model=AuthResponse,
+)
+def google_auth(
+    payload: GoogleAuthRequest,
+    response: Response,
+    db: Annotated[Session, Depends(get_db)],
+):
+    session, refresh_token = authenticate_with_google(
+        db,
+        payload.credential,
+    )
+
+    _set_refresh_cookie(
+        response,
+        refresh_token,
+    )
+
+    return session
 
 @router.post("/logout", response_model=MessageResponse)
 def logout(
@@ -171,7 +197,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
 
     SECRET_KEY: str
-
+    GOOGLE_CLIENT_ID: str
     ALGORITHM: str
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int
@@ -210,7 +236,48 @@ FILE: core\oauth.py
 ====================================================================================================
 
 ```python
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
 
+from app.core.config import settings
+
+
+class GoogleTokenVerificationError(Exception):
+    pass
+
+
+def verify_google_id_token(credential: str) -> dict:
+    try:
+        payload = id_token.verify_oauth2_token(
+            credential,
+            google_requests.Request(),
+            settings.GOOGLE_CLIENT_ID,
+        )
+    except Exception as exc:
+        raise GoogleTokenVerificationError(
+            "Invalid Google credential"
+        ) from exc
+
+    google_id = payload.get("sub")
+    email = payload.get("email")
+    email_verified = payload.get("email_verified")
+
+    if not google_id:
+        raise GoogleTokenVerificationError(
+            "Google account identifier is missing"
+        )
+
+    if not email:
+        raise GoogleTokenVerificationError(
+            "Google account email is missing"
+        )
+
+    if email_verified is not True:
+        raise GoogleTokenVerificationError(
+            "Google email is not verified"
+        )
+
+    return payload
 ```
 
 ====================================================================================================
@@ -300,7 +367,6 @@ FILE: db\base.py
 ```python
 from app.db.database import Base
 from app.models import EmailVerificationToken, PasswordResetToken, RefreshToken, User
-
 
 ```
 
@@ -418,7 +484,6 @@ from app.models.email_verification import EmailVerificationToken
 from app.models.password_reset import PasswordResetToken
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
-
 __all__ = ["EmailVerificationToken", "PasswordResetToken", "RefreshToken", "User"]
 
 ```
@@ -469,6 +534,127 @@ class EmailVerificationToken(Base):
         back_populates="email_tokens"
     )
 
+```
+
+====================================================================================================
+FILE: models\memory_file.py
+====================================================================================================
+
+```python
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    ForeignKey,
+)
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from app.db.database import Base
+
+
+class MemoryFile(Base):
+    __tablename__ = "memory_files"
+
+    id = Column(Integer, primary_key=True)
+
+    memory_person_id = Column(
+        Integer,
+        ForeignKey("memory_people.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    file_name = Column(String(255), nullable=False)
+
+    file_path = Column(String(500), nullable=False)
+
+    file_type = Column(String(30), nullable=False)
+
+    mime_type = Column(String(100), nullable=False)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+   
+```
+
+====================================================================================================
+FILE: models\memory_person.py
+====================================================================================================
+
+```python
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    Date,
+    DateTime,
+    ForeignKey,
+)
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from app.db.database import Base
+
+
+class MemoryPerson(Base):
+    __tablename__ = "memory_people"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    owner_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    full_name = Column(String(150), nullable=False)
+
+    nickname = Column(String(100), nullable=True)
+
+    relationship = Column(String(100), nullable=False)
+
+    gender = Column(String(30), nullable=True)
+
+    birth_date = Column(Date, nullable=True)
+
+    passing_date = Column(Date, nullable=True)
+
+    languages = Column(String(255), nullable=True)
+
+    country = Column(String(100), nullable=True)
+
+    city = Column(String(100), nullable=True)
+
+    profile_picture = Column(String(500), nullable=True)
+
+    about = Column(Text, nullable=True)
+
+    bond_story = Column(Text, nullable=True)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    owner = relationship(
+        "User",
+        back_populates="memory_people",
+    )
+
+    
 ```
 
 ====================================================================================================
@@ -774,6 +960,41 @@ def create_user(
     return user
 
 
+def get_user_by_google_id(
+    db: Session,
+    google_id: str,
+) -> User | None:
+    return (
+        db.query(User)
+        .filter(User.google_id == google_id)
+        .first()
+    )
+
+
+def create_google_user(
+    db: Session,
+    *,
+    first_name: str,
+    last_name: str,
+    email: str,
+    google_id: str,
+    profile_picture: str | None,
+) -> User:
+    user = User(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        password_hash=None,
+        profile_picture=profile_picture,
+        provider="google",
+        google_id=google_id,
+        is_active=True,
+        is_verified=True,
+    )
+
+    db.add(user)
+    return user
+
 def update_last_login(
     db: Session,
     user: User,
@@ -795,7 +1016,8 @@ FILE: schemas\auth.py
 from pydantic import BaseModel, EmailStr, Field
 
 from app.schemas.user import UserResponse
-
+class GoogleAuthRequest(BaseModel):
+    credential: str = Field(min_length=1)
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -1098,7 +1320,127 @@ FILE: services\oauth_service.py
 ====================================================================================================
 
 ```python
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 
+from app.core.oauth import (
+    GoogleTokenVerificationError,
+    verify_google_id_token,
+)
+from app.repositories.user_repository import (
+    create_google_user,
+    get_user_by_email,
+    get_user_by_google_id,
+    update_last_login,
+)
+from app.services.auth_service import create_registered_session
+
+
+def authenticate_with_google(
+    db: Session,
+    credential: str,
+):
+    try:
+        google_payload = verify_google_id_token(credential)
+
+    except GoogleTokenVerificationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Google authentication failed",
+        ) from exc
+
+    google_id = str(google_payload["sub"])
+    email = str(google_payload["email"]).strip().lower()
+
+    first_name = str(
+        google_payload.get("given_name") or ""
+    ).strip()
+
+    last_name = str(
+        google_payload.get("family_name") or ""
+    ).strip()
+
+    profile_picture = google_payload.get("picture")
+
+    # 1. Existing Google account
+    existing_google_user = get_user_by_google_id(
+        db,
+        google_id,
+    )
+
+    if existing_google_user:
+        if not existing_google_user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is disabled",
+            )
+
+        update_last_login(
+            db,
+            existing_google_user,
+        )
+
+        return create_registered_session(
+            db,
+            existing_google_user,
+        )
+
+    # 2. Same email already registered via password
+    existing_email_user = get_user_by_email(
+        db,
+        email,
+    )
+
+    if existing_email_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "An account with this email already exists. "
+                "Sign in using your existing login method."
+            ),
+        )
+
+    # 3. Fallback name
+    if not first_name:
+        first_name = email.split("@", 1)[0][:75]
+
+    # DB currently requires last_name
+    if not last_name:
+        last_name = ""
+
+    # 4. Create new Google user
+    try:
+        user = create_google_user(
+            db,
+            first_name=first_name[:75],
+            last_name=last_name[:75],
+            email=email,
+            google_id=google_id,
+            profile_picture=(
+                str(profile_picture)
+                if profile_picture
+                else None
+            ),
+        )
+
+        db.flush()
+
+        update_last_login(
+            db,
+            user,
+        )
+
+        db.commit()
+        db.refresh(user)
+
+        return create_registered_session(
+            db,
+            user,
+        )
+
+    except Exception:
+        db.rollback()
+        raise
 ```
 
 ====================================================================================================

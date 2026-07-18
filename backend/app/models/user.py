@@ -20,51 +20,104 @@ class User(Base):
 
     last_name = Column(String(75), nullable=False)
 
-    email = Column(String(255), unique=True, nullable=False, index=True)
+    email = Column(
+        String(255),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
 
-    password_hash = Column(String(255), nullable=True)
+    password_hash = Column(
+        String(255),
+        nullable=True,
+    )
 
-    profile_picture = Column(String(500), nullable=True)
+    profile_picture = Column(
+        String(500),
+        nullable=True,
+    )
 
-    provider = Column(String(30), default="email", server_default="email", nullable=False)
+    provider = Column(
+        String(30),
+        default="email",
+        server_default="email",
+        nullable=False,
+    )
 
-    google_id = Column(String(255), unique=True, nullable=True)
+    google_id = Column(
+        String(255),
+        unique=True,
+        nullable=True,
+    )
 
-    role = Column(String(30), default="user", server_default="user", nullable=False)
+    role = Column(
+        String(30),
+        default="user",
+        server_default="user",
+        nullable=False,
+    )
 
-    is_verified = Column(Boolean, default=False, server_default="false", nullable=False)
+    is_verified = Column(
+        Boolean,
+        default=False,
+        server_default="false",
+        nullable=False,
+    )
 
-    is_active = Column(Boolean, default=True, server_default="true", nullable=False)
+    is_active = Column(
+        Boolean,
+        default=True,
+        server_default="true",
+        nullable=False,
+    )
 
-    last_login = Column(DateTime(timezone=True), nullable=True)
+    last_login = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     created_at = Column(
         DateTime(timezone=True),
-        server_default=func.now()
+        server_default=func.now(),
     )
 
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
-        onupdate=func.now()
+        onupdate=func.now(),
     )
+
+    # ==========================================================
+    # Authentication Relationships
+    # ==========================================================
 
     refresh_tokens = relationship(
         "RefreshToken",
         back_populates="user",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
     email_tokens = relationship(
         "EmailVerificationToken",
         back_populates="user",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
     password_reset_tokens = relationship(
         "PasswordResetToken",
         back_populates="user",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+    )
+
+    # ==========================================================
+    # Memory Companions
+    # ==========================================================
+
+    memory_people = relationship(
+        "MemoryPerson",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     @property

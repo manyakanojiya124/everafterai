@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session
 from app.models import EmailVerificationToken
 
 
-def replace_email_verification_token(
-    db: Session, *, user_id: int, token_hash: str, expires_at: datetime
-) -> EmailVerificationToken:
+def replace_email_verification_token(db: Session, *, user_id: int, token_hash: str, expires_at: datetime) -> EmailVerificationToken:
     (
         db.query(EmailVerificationToken)
         .filter(EmailVerificationToken.user_id == user_id, EmailVerificationToken.used.is_(False))
@@ -18,9 +16,7 @@ def replace_email_verification_token(
     return token
 
 
-def get_active_email_verification_token(
-    db: Session, *, user_id: int, token_hash: str
-) -> EmailVerificationToken | None:
+def get_active_email_verification_token(db: Session, *, user_id: int, token_hash: str) -> EmailVerificationToken | None:
     return (
         db.query(EmailVerificationToken)
         .filter(

@@ -6,6 +6,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite://")
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ.setdefault("ALGORITHM", "HS256")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+os.environ.setdefault("GOOGLE_CLIENT_ID", "test-client-id")
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -14,12 +15,8 @@ import app.db.base  # Register all models.
 from app.core.security import decode_access_token, verify_password
 from app.db.database import Base
 from app.services.auth_service import (
-    create_registered_session,
-    login_user,
-    refresh_user_session,
-    register_user,
-    send_email_verification,
-    verify_email_otp,
+    create_registered_session, login_user, refresh_user_session, register_user,
+    send_email_verification, verify_email_otp,
 )
 
 
@@ -38,7 +35,6 @@ class AuthServiceTests(unittest.TestCase):
     def test_register_hashes_password_and_creates_session(self):
         user = register_user(self.db, "Ada", "Lovelace", "ada@example.com", "correct-horse-battery")
         self.assertTrue(verify_password("correct-horse-battery", user.password_hash))
-
         payload, refresh_token = create_registered_session(self.db, user)
         self.assertEqual(payload["user"].id, user.id)
         self.assertTrue(refresh_token)
@@ -50,7 +46,6 @@ class AuthServiceTests(unittest.TestCase):
         self.db.commit()
         payload, refresh_token = login_user(self.db, "ada@example.com", "correct-horse-battery")
         refreshed_payload, new_refresh_token = refresh_user_session(self.db, refresh_token)
-
         self.assertNotEqual(refresh_token, new_refresh_token)
         self.assertNotEqual(payload["access_token"], refreshed_payload["access_token"])
         with self.assertRaises(Exception):
@@ -61,7 +56,6 @@ class AuthServiceTests(unittest.TestCase):
         with patch("app.services.auth_service.send_verification_otp") as send_otp:
             send_email_verification(self.db, user)
             otp = send_otp.call_args.args[1]
-
         payload, _ = verify_email_otp(self.db, user.email, otp)
         self.assertTrue(payload["user"].is_verified)
 

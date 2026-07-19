@@ -6,23 +6,13 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.db.database import get_db
 from app.schemas.auth import (
-    AuthResponse,
-    GoogleAuthRequest,
-    LoginRequest,
-    MessageResponse,
-    RegistrationResponse,
-    ResendVerificationRequest,
-    VerifyEmailRequest,
+    AuthResponse, GoogleAuthRequest, LoginRequest, MessageResponse,
+    RegistrationResponse, ResendVerificationRequest, VerifyEmailRequest,
 )
 from app.schemas.user import UserCreate
 from app.services.auth_service import (
-    login_user,
-    logout_user,
-    refresh_user_session,
-    register_user,
-    resend_email_verification,
-    send_email_verification,
-    verify_email_otp,
+    login_user, logout_user, refresh_user_session, register_user,
+    resend_email_verification, send_email_verification, verify_email_otp,
 )
 from app.services.oauth_service import authenticate_with_google
 
@@ -32,13 +22,8 @@ REFRESH_COOKIE_NAME = "everafter_refresh_token"
 
 def _set_refresh_cookie(response: Response, token: str) -> None:
     response.set_cookie(
-        key=REFRESH_COOKIE_NAME,
-        value=token,
-        httponly=True,
-        secure=settings.REFRESH_COOKIE_SECURE,
-        samesite="lax",
-        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        path="/api/v1/auth",
+        key=REFRESH_COOKIE_NAME, value=token, httponly=True, secure=settings.REFRESH_COOKIE_SECURE,
+        samesite="lax", max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60, path="/api/v1/auth",
     )
 
 
@@ -71,8 +56,7 @@ def login(credentials: LoginRequest, response: Response, db: Annotated[Session, 
 
 @router.post("/refresh", response_model=AuthResponse)
 def refresh(
-    response: Response,
-    db: Annotated[Session, Depends(get_db)],
+    response: Response, db: Annotated[Session, Depends(get_db)],
     refresh_token: Annotated[str | None, Cookie(alias=REFRESH_COOKIE_NAME)] = None,
 ):
     if not refresh_token:
@@ -81,31 +65,17 @@ def refresh(
     _set_refresh_cookie(response, new_refresh_token)
     return payload
 
-@router.post(
-    "/google",
-    response_model=AuthResponse,
-)
-def google_auth(
-    payload: GoogleAuthRequest,
-    response: Response,
-    db: Annotated[Session, Depends(get_db)],
-):
-    session, refresh_token = authenticate_with_google(
-        db,
-        payload.credential,
-    )
 
-    _set_refresh_cookie(
-        response,
-        refresh_token,
-    )
-
+@router.post("/google", response_model=AuthResponse)
+def google_auth(payload: GoogleAuthRequest, response: Response, db: Annotated[Session, Depends(get_db)]):
+    session, refresh_token = authenticate_with_google(db, payload.credential)
+    _set_refresh_cookie(response, refresh_token)
     return session
+
 
 @router.post("/logout", response_model=MessageResponse)
 def logout(
-    response: Response,
-    db: Annotated[Session, Depends(get_db)],
+    response: Response, db: Annotated[Session, Depends(get_db)],
     refresh_token: Annotated[str | None, Cookie(alias=REFRESH_COOKIE_NAME)] = None,
 ):
     logout_user(db, refresh_token)

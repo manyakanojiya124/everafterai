@@ -37,6 +37,7 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=72)
 
+
 class UserResponse(BaseModel):
     id: int
     full_name: str
@@ -47,6 +48,4 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}

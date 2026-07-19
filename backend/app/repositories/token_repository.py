@@ -12,11 +12,7 @@ def create_refresh_token(db: Session, *, user_id: int, token_hash: str, expires_
 
 
 def get_active_refresh_token(db: Session, token_hash: str) -> RefreshToken | None:
-    return (
-        db.query(RefreshToken)
-        .filter(RefreshToken.token_hash == token_hash, RefreshToken.revoked.is_(False))
-        .first()
-    )
+    return db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash, RefreshToken.revoked.is_(False)).first()
 
 
 def revoke_refresh_token(refresh_token: RefreshToken) -> None:

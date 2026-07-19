@@ -1,63 +1,66 @@
 from pathlib import Path
 
-ROOT = Path(r"C:\O\backend\app")
-OUTPUT = Path(r"C:\O\backend_master.md")
+ROOT = Path("app")
+OUTPUT = Path("backend.md")
 
-ALLOWED = {
-    "api",
-    "core",
-    "db",
-    "dependecies",
-    "expectations",
-    "middleware",
-    "models",
-    "repositories",
-    "schemas",
-    "services",
-    "tests",
-    "utils",
-}
 
-with open(OUTPUT, "w", encoding="utf-8") as out:
+def build_tree(directory: Path, prefix=""):
+    lines = []
+    items = sorted(
+        directory.iterdir(),
+        key=lambda x: (x.is_file(), x.name.lower())
+    )
 
-    out.write("# EverAfter AI Backend\n\n")
+    for index, item in enumerate(items):
+        connector = "└── " if index == len(items) - 1 else "├── "
+        lines.append(prefix + connector + item.name)
 
-    # main.py
-    main_file = ROOT / "main.py"
-    if main_file.exists():
-        out.write("=" * 100 + "\n")
-        out.write("FILE: main.py\n")
-        out.write("=" * 100 + "\n\n")
-        out.write("```python\n")
-        out.write(main_file.read_text(encoding="utf-8"))
-        out.write("\n```\n\n")
+        if item.is_dir():
+            extension = "    " if index == len(items) - 1 else "│   "
+            lines.extend(build_tree(item, prefix + extension))
 
-    for folder in sorted(ALLOWED):
+    return lines
 
-        folder_path = ROOT / folder
 
-        if not folder_path.exists():
-            continue
+with OUTPUT.open("w", encoding="utf-8") as md:
 
-        for file in sorted(folder_path.rglob("*.py")):
+    md.write("# EverAfter AI Backend Source\n\n")
 
-            if "__pycache__" in str(file):
-                continue
+    md.write("Generated automatically.\n\n")
 
-            relative = file.relative_to(ROOT)
+    md.write("---\n\n")
 
-            out.write("=" * 100 + "\n")
-            out.write(f"FILE: {relative}\n")
-            out.write("=" * 100 + "\n\n")
+    md.write("## Project Tree\n\n")
 
-            out.write("```python\n")
+    md.write("```text\n")
+    md.write("app\n")
 
-            try:
-                out.write(file.read_text(encoding="utf-8"))
-            except:
-                out.write(file.read_text(errors="ignore"))
+    for line in build_tree(ROOT):
+        md.write(line + "\n")
 
-            out.write("\n```\n\n")
+    md.write("```\n\n")
 
-print("DONE")
-print("Saved to:", OUTPUT)
+    md.write("---\n\n")
+
+    py_files = sorted(ROOT.rglob("*.py"))
+
+    for file in py_files:
+
+        relative = file.relative_to(ROOT.parent)
+
+        md.write(f"# {relative}\n\n")
+
+        md.write(f"**Location:** `{relative}`\n\n")
+
+        md.write("```python\n")
+
+        try:
+            md.write(file.read_text(encoding="utf-8"))
+        except UnicodeDecodeError:
+            md.write(file.read_text(encoding="latin-1"))
+
+        md.write("\n```\n\n")
+
+        md.write("---\n\n")
+
+print(f"Done! Generated {OUTPUT.resolve()}")

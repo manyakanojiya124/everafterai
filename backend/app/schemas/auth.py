@@ -1,8 +1,11 @@
 from pydantic import BaseModel, EmailStr, Field
 
 from app.schemas.user import UserResponse
+
+
 class GoogleAuthRequest(BaseModel):
     credential: str = Field(min_length=1)
+
 
 class LoginRequest(BaseModel):
     email: EmailStr

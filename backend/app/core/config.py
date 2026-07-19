@@ -22,6 +22,17 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str | None = None
     SMTP_USE_TLS: bool = True
 
+    UPLOAD_DIR: str = "uploads"
+    MAX_UPLOAD_SIZE_MB: int = 200
+    ALLOWED_IMAGE_TYPES: str = "image/jpeg,image/png,image/webp,image/gif"
+    ALLOWED_AUDIO_TYPES: str = "audio/mpeg,audio/wav,audio/mp4,audio/x-m4a,audio/webm,audio/ogg"
+    ALLOWED_VIDEO_TYPES: str = "video/mp4,video/quicktime,video/webm"
+    ALLOWED_DOCUMENT_TYPES: str = "application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+    OPENAI_API_KEY: str | None = None
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parents[2] / ".env",
         extra="ignore"

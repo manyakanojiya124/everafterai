@@ -1,5 +1,0 @@
-{
-	"dependencies": {
-		"ui": "git+https://github.com/shadcn/ui.git"
-	}
-}

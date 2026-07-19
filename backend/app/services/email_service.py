@@ -12,7 +12,6 @@ def send_verification_otp(email: str, otp: str) -> None:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Email verification is not configured. Add SMTP settings to backend/.env.",
         )
-
     message = EmailMessage()
     message["Subject"] = "Your EverAfter verification code"
     message["From"] = settings.SMTP_FROM_EMAIL

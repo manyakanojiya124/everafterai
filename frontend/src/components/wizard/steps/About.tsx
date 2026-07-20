@@ -2,111 +2,56 @@
 
 import { useFormContext } from "react-hook-form";
 
-import FormInput from "@/features/memory-companion/components/FromInput";
-import { CreateCompanionInput } from "@/features/memory-companion/components/schemas/create-companion";
+import { TextAreaField, TextField } from "@/components/ui/field";
+import { CompanionFormValues } from "@/components/wizard/schema";
 
-export default function About() {
-  const {
-    register,
-    formState: { errors },
-  } = useFormContext<CreateCompanionInput>();
+export function AboutStep() {
+  const { register } = useFormContext<CompanionFormValues>();
 
   return (
-    <div className="space-y-10">
-      {/* Heading */}
+    <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold text-stone-900">
-          About
-        </h2>
-
-        <p className="mt-2 text-stone-500">
-          Tell EverAfter AI about this person's personality, interests and life.
+        <h2 className="font-serif text-2xl font-medium text-ink">About them</h2>
+        <p className="mt-1 text-sm text-ink-muted">
+          Small details help EverAfter sound more like them.
         </p>
       </div>
 
-      {/* Form */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Biography */}
-        <div className="md:col-span-2 space-y-2">
-          <label className="text-sm font-medium">
-            Biography
-          </label>
-
-          <textarea
-            {...register("biography")}
-            rows={5}
-            className="w-full rounded-xl border border-stone-300 px-4 py-3"
-            placeholder="Write a short biography..."
-          />
-
-          {errors.biography && (
-            <p className="text-sm text-red-500">
-              {errors.biography.message}
-            </p>
-          )}
-        </div>
-
-        {/* Favorite Quote */}
-        <div className="md:col-span-2">
-          <FormInput
-            label="Favorite Quote"
-            name="favorite_quote"
-            register={register}
-          />
-        </div>
-
-        {/* Favorite Food */}
-        <FormInput
-          label="Favorite Food"
-          name="favorite_food"
-          register={register}
+      <div className="space-y-5">
+        <TextAreaField
+          label="Biography"
+          rows={5}
+          placeholder="A short life story…"
+          {...register("biography")}
         />
 
-        {/* Favorite Song */}
-        <FormInput
-          label="Favorite Song"
-          name="favorite_song"
-          register={register}
+        <TextAreaField
+          label="Favorite quote or saying"
+          rows={2}
+          placeholder="Something they always used to say…"
+          {...register("favorite_quote")}
         />
 
-        {/* Favorite Color */}
-        <FormInput
-          label="Favorite Color"
-          name="favorite_color"
-          register={register}
+        <div className="grid gap-5 sm:grid-cols-3">
+          <TextField label="Favorite food" {...register("favorite_food")} />
+          <TextField label="Favorite song" {...register("favorite_song")} />
+          <TextField label="Favorite color" {...register("favorite_color")} />
+        </div>
+
+        <TextAreaField
+          label="Hobbies & interests"
+          rows={3}
+          placeholder="Reading, gardening, travelling…"
+          {...register("hobbies")}
         />
 
-        {/* Hobbies */}
-        <div className="md:col-span-2 space-y-2">
-          <label className="text-sm font-medium">
-            Hobbies
-          </label>
-
-          <textarea
-            {...register("hobbies")}
-            rows={4}
-            className="w-full rounded-xl border border-stone-300 px-4 py-3"
-            placeholder="Reading, travelling, gardening..."
-          />
-        </div>
-
-        {/* Personality Traits */}
-        <div className="md:col-span-2 space-y-2">
-          <label className="text-sm font-medium">
-            Personality Traits
-          </label>
-
-          <textarea
-            {...register("personality_traits")}
-            rows={3}
-            className="w-full rounded-xl border border-stone-300 px-4 py-3"
-            placeholder="Kind, Funny, Caring, Honest (comma separated)"
-          />
-
-          <p className="text-xs text-stone-500">
-            Separate multiple traits using commas.
-          </p>
-        </div>
+        <TextAreaField
+          label="Personality traits"
+          rows={2}
+          placeholder="Kind, funny, caring, honest (comma separated)"
+          hint="Separate multiple traits with commas."
+          {...register("personality_traits")}
+        />
       </div>
     </div>
   );

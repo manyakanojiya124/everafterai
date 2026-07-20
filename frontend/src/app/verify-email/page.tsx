@@ -2,32 +2,136 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import { AuthCard } from "@/components/auth/auth-card";
+import { OtpInput, type OtpStatus } from "@/components/ui/otp-input";
+import { TextField } from "@/components/ui/field";
+import { toast } from "@/components/ui/toaster";
+import { useAuth } from "@/providers/auth-provider";
 import { resendVerification, verifyEmail } from "@/lib/api";
+
+const RESEND_COOLDOWN_SECONDS = 30;
+// How long the green "Verification complete" state stays on screen
+// before handing off to the chat UI — long enough to actually register,
+// short enough not to feel like a stall.
+const SUCCESS_HANDOFF_MS = 900;
+const ERROR_RESET_MS = 900;
 
 export default function VerifyEmailPage() {
   const router = useRouter();
-  const [email, setEmail] = useState(() =>
-    typeof window === "undefined" ? "" : sessionStorage.getItem("everafter_verification_email") ?? "",
-  );
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { setUser } = useAuth();
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const otp = String(new FormData(event.currentTarget).get("otp"));
-    setError(""); setIsSubmitting(true);
-    try { await verifyEmail(email, otp); router.replace("/dashboard"); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Unable to verify the code."); }
-    finally { setIsSubmitting(false); }
-  }
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [status, setStatus] = useState<OtpStatus>("idle");
+  const [isResending, setIsResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("everafter_verification_email");
+    if (stored) setEmail(stored);
+  }, []);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setInterval(() => setCooldown((current) => current - 1), 1000);
+    return () => clearInterval(id);
+  }, [cooldown]);
+
+  // Fired by OtpInput automatically the instant all 6 digits are in —
+  // there is no manual "Verify" button in this flow.
+  const handleComplete = useCallback(
+    async (code: string) => {
+      if (!email) {
+        toast.error("Enter your email address first.");
+        return;
+      }
+      setStatus("verifying");
+      try {
+        const user = await verifyEmail(email, code);
+        setStatus("success");
+        window.setTimeout(() => {
+          setUser(user);
+          router.replace("/companions");
+        }, SUCCESS_HANDOFF_MS);
+      } catch (error) {
+        setStatus("error");
+        toast.error(error instanceof Error ? error.message : "Unable to verify the code.");
+        window.setTimeout(() => {
+          setOtp("");
+          setStatus("idle");
+        }, ERROR_RESET_MS);
+      }
+    },
+    [email, router, setUser],
+  );
 
   async function resend() {
-    setError(""); setMessage("");
-    try { setMessage((await resendVerification(email)).message); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Unable to resend the code."); }
+    if (!email) {
+      toast.error("Enter your email address first.");
+      return;
+    }
+    setIsResending(true);
+    try {
+      const result = await resendVerification(email);
+      toast.success(result.message);
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      setOtp("");
+      setStatus("idle");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to resend the code.");
+    } finally {
+      setIsResending(false);
+    }
   }
 
-  return <main className="mx-auto flex min-h-screen max-w-md items-center px-6"><form onSubmit={submit} className="w-full space-y-6 rounded-2xl border border-stone-200 bg-white p-8 shadow-sm"><div><p className="text-sm text-stone-500">One last step</p><h1 className="mt-1 text-3xl font-semibold text-stone-900">Verify your email</h1><p className="mt-3 text-sm text-stone-600">We sent a six-digit code to your email address.</p></div><label className="block text-sm font-medium">Email<input required value={email} onChange={(event) => setEmail(event.target.value)} type="email" className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2" /></label><label className="block text-sm font-medium">Verification code<input required name="otp" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 tracking-[0.4em]" /></label>{error && <p role="alert" className="text-sm text-red-700">{error}</p>}{message && <p className="text-sm text-green-700">{message}</p>}<button disabled={isSubmitting} className="w-full rounded-lg bg-stone-900 px-4 py-2.5 font-medium text-white disabled:opacity-60">{isSubmitting ? "Verifying…" : "Verify email"}</button><button type="button" onClick={resend} className="w-full text-sm text-stone-700 underline">Resend code</button><p className="text-center text-sm text-stone-600"><Link className="underline" href="/login">Back to sign in</Link></p></form></main>;
+  const locked = status === "verifying" || status === "success";
+
+  return (
+    <AuthCard eyebrow="One last step" title="Verify your email">
+      <div className="space-y-6">
+        <p className="text-sm leading-relaxed text-ink-muted">
+          Enter the six-digit code we sent to your email address. It verifies itself the moment
+          the last digit lands.
+        </p>
+
+        <TextField
+          label="Email"
+          type="email"
+          value={email}
+          disabled={locked}
+          onChange={(event) => setEmail(event.target.value)}
+        />
+
+        <div className="space-y-1.5">
+          <span className="text-sm font-medium text-ink">Verification code</span>
+          <OtpInput
+            value={otp}
+            onChange={(next) => {
+              setOtp(next);
+              if (status === "error") setStatus("idle");
+            }}
+            onComplete={handleComplete}
+            status={status}
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={resend}
+          disabled={isResending || cooldown > 0 || locked}
+          className="w-full text-center text-sm text-ink-muted underline underline-offset-2 transition-opacity disabled:opacity-50"
+        >
+          {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
+        </button>
+
+        <p className="text-center text-sm text-ink-muted">
+          <Link href="/login" className="font-medium text-primary hover:underline">
+            Back to sign in
+          </Link>
+        </p>
+      </div>
+    </AuthCard>
+  );
 }

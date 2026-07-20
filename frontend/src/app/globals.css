@@ -1,19 +1,164 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ==========================================================================
+   EverAfter AI — "Quiet Blush" design tokens
+   A calm, private space for grief. Warm, tactile, unhurried. No blue/green,
+   no literal candle/flame iconography, one light theme only.
+   ========================================================================== */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  /* -- Color -------------------------------------------------------------- */
+  --color-blush: #fbf6f4; /* app background */
+  --color-surface: #ffffff; /* cards, sheets, modals */
+  --color-sunken: #f3e9e6; /* inputs, incoming bubbles */
+  --color-primary: #c98a93; /* dusty rose */
+  --color-primary-hover: #b87680;
+  --color-accent: #e3b7a0; /* warm secondary accent */
+  --color-ink: #2b2325; /* primary text */
+  --color-ink-muted: #8a7570; /* secondary text */
+  --color-line: #eadfdb; /* hairline borders */
+  --color-success: #b8925b; /* muted gold, never green */
+  --color-danger: #b0525a; /* muted brick, never red-red */
+  --color-crisis: #f6e9dc; /* crisis banner background */
+  --color-crisis-ink: #7a4b3a; /* crisis banner text */
+
+  /* -- Type ----------------------------------------------------------------
+     Fraunces (display serif) + Inter (humanist sans) are loaded via <link>
+     tags in the root layout so no network access is required at build time.
+     Sensible system fallbacks keep the same warm character if the webfont
+     hasn't loaded yet. */
+  --font-serif: "Fraunces", ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  /* -- Radius --------------------------------------------------------------*/
+  --radius-card: 16px;
+  --radius-bubble: 20px;
+  --radius-pill: 999px;
+
+  /* -- Motion ---------------------------------------------------------------*/
+  --ease-gentle: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme {
+  --font-amoresa: var(--font-amoresa);
+  --font-codec: var(--font-codec-pro);
+}
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  border-color: var(--color-line);
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: #fafaf9;
-  color: #1c1917;
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-blush);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+/* Visible keyboard focus ring on every interactive element */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Thin, warm scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-accent) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-ink-muted) 35%, transparent);
+  border-radius: 999px;
+}
+
+/* -- Presence ring --------------------------------------------------------
+   The one recurring signature motif: a thin breathing ring around a memory
+   person's avatar. Nowhere else gets this treatment. */
+.presence-ring {
+  position: relative;
+}
+
+.presence-ring::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--color-primary) 45%, transparent);
+  animation: presence-breathe 3s var(--ease-gentle) infinite;
+}
+
+@keyframes presence-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+/* -- Typing indicator ------------------------------------------------------*/
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.typing-dot {
+  animation: typing-dot 1.2s var(--ease-gentle) infinite;
+}
+
+/* -- Loading ripple ---------------------------------------------------------*/
+@keyframes ripple-out {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.ripple-ring {
+  animation: ripple-out 2.4s var(--ease-gentle) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presence-ring::before,
+  .typing-dot,
+  .ripple-ring {
+    animation: none !important;
+  }
 }

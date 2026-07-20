@@ -1,88 +1,116 @@
 "use client";
-import { GoogleSignInButton } from "@/components/google-sign-in-button";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff } from "lucide-react";
+import { z } from "zod";
+
+import { AuthCard } from "@/components/auth/auth-card";
+import { GoogleSignInButton } from "@/components/auth/google-button";
+import { Button } from "@/components/ui/button";
+import { TextField } from "@/components/ui/field";
+import { toast } from "@/components/ui/toaster";
+import { useAuth } from "@/providers/auth-provider";
 import { login } from "@/lib/api";
+
+const schema = z.object({
+  email: z.string().email("Enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type FormValues = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, setUser } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    setError("");
-    setIsSubmitting(true);
+  useEffect(() => {
+    if (user) router.replace("/companions");
+  }, [user, router]);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+
+  async function onSubmit(values: FormValues) {
     try {
-      await login(String(form.get("email")), String(form.get("password")));
-      router.replace("/dashboard");
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to sign in.");
-    } finally {
-      setIsSubmitting(false);
+      const user = await login(values.email, values.password);
+      setUser(user);
+      router.replace("/companions");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to sign in.");
     }
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md items-center px-6">
-      <form
-        onSubmit={submit}
-        className="w-full space-y-6 rounded-2xl border border-stone-200 bg-white p-8 shadow-sm"
-      >
-        <div>
-          <p className="text-sm text-stone-500">Welcome back</p>
-          <h1 className="mt-1 text-3xl font-semibold text-stone-900">
-            Sign in to EverAfter
-          </h1>
-        </div>
-        <label className="block text-sm font-medium">
-          Email
-          <input
-            required
-            name="email"
-            type="email"
-            className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
-          />
-        </label>
-        <label className="block text-sm font-medium">
-          Password
-          <input
-            required
-            name="password"
-            type="password"
-            minLength={8}
-            className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
-          />
-        </label>
-        {error && (
-          <p role="alert" className="text-sm text-red-700">
-            {error}
-          </p>
-        )}
-        <button
-          disabled={isSubmitting}
-          className="w-full rounded-lg bg-stone-900 px-4 py-2.5 font-medium text-white disabled:opacity-60"
-        >
-          {isSubmitting ? "Signing in…" : "Sign in"}
-        </button>
-      <div className="flex items-center gap-3">
-  <div className="h-px flex-1 bg-stone-200" />
-  <span className="text-xs uppercase tracking-wide text-stone-400">
-    or
-  </span>
-  <div className="h-px flex-1 bg-stone-200" />
-</div>
+    <AuthCard eyebrow="Welcome back" title="Sign in to EverAfter">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+        <TextField
+          label="Email"
+          type="email"
+          autoComplete="email"
+          autoFocus
+          error={errors.email?.message}
+          {...register("email")}
+        />
 
-<GoogleSignInButton mode="login" />
-        <p className="text-center text-sm text-stone-600">
+        <div className="relative">
+          <TextField
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            error={errors.password?.message}
+            {...register("password")}
+          />
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowPassword((current) => !current)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="absolute right-3 top-[38px] text-ink-muted transition-colors hover:text-ink"
+          >
+            {showPassword ? (
+              <EyeOff size={18} strokeWidth={1.5} />
+            ) : (
+              <Eye size={18} strokeWidth={1.5} />
+            )}
+          </button>
+        </div>
+
+        <div className="flex justify-end">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-ink-muted transition-colors hover:text-primary"
+          >
+            Forgot password?
+          </Link>
+        </div>
+
+        <Button type="submit" className="w-full" isLoading={isSubmitting}>
+          Sign in
+        </Button>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-line" />
+          <span className="text-xs uppercase tracking-wide text-ink-muted">or</span>
+          <div className="h-px flex-1 bg-line" />
+        </div>
+
+        <GoogleSignInButton mode="login" />
+
+        <p className="text-center text-sm text-ink-muted">
           New here?{" "}
-          <Link className="underline" href="/register">
+          <Link href="/register" className="font-medium text-primary hover:underline">
             Create an account
           </Link>
         </p>
       </form>
-    </main>
+    </AuthCard>
   );
 }

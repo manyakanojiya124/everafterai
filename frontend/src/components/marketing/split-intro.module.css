@@ -1,0 +1,80 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  background: var(--color-blush);
+}
+
+.overlay.split {
+  pointer-events: none;
+}
+
+.half {
+  position: relative;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  /* Promote to their own composite layers ahead of time so the first
+     animation frame doesn't stall on layer creation. */
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.left {
+  justify-content: flex-end;
+}
+
+.right {
+  justify-content: flex-start;
+}
+
+/* Both halves render the same word at the same size/line-height so
+   "ever" and "after" meet as one continuous wordmark at the seam. The
+   1px nudge on .right exists because font-amoresa and font-codec are
+   two different type families — unlike the original two-image intro,
+   which was pixel-cropped from one source and needed no correction,
+   pairing two typefaces can leave their baselines a hair off. Adjust
+   or remove this if you swap either face. */
+.word {
+  font-size: clamp(3.25rem, 13vw, 8.5rem);
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.right .word {
+  position: relative;
+  top: 1px;
+}
+
+.split .left {
+  animation: slideLeft 1.6s var(--ease-gentle) forwards;
+}
+
+.split .right {
+  animation: slideRight 1.6s var(--ease-gentle) forwards;
+}
+
+@keyframes slideLeft {
+  to {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+@keyframes slideRight {
+  to {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .split .left,
+  .split .right {
+    animation-duration: 0.01s;
+  }
+}

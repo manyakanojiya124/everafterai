@@ -20,9 +20,24 @@ from app.core.config import settings
 logger = logging.getLogger("everafter.mail")
 
 SENDER_NAME = "EverAfter"
-BRAND_COLOR = "#E08A2A"      # amber-deep, matches the product palette
-BRAND_BG = "#FCB94D"         # marigold
-INK = "#2B1B1A"              # plum / body text
+
+# NOTE ON COLOR SOURCE
+# ---------------------------------------------------------------------
+# These are pulled to match the Tailwind tokens already used across the
+# app (bg-blush, text-ink, text-ink-muted, border-line, bg-surface,
+# text-primary, the from-accent/to-primary badge gradient) rather than
+# the previous amber/marigold pair, which didn't match anything else in
+# the product. If your tailwind.config defines different hex values for
+# these tokens, swap them in below — the email intentionally uses the
+# same *names* so it's a one-line change per color, not a redesign.
+# ---------------------------------------------------------------------
+BLUSH_BG = "#FBEFEA"      # page background — soft warm cream/pink
+SURFACE = "#FFFFFF"       # card background
+INK = "#2B1B1A"           # primary text
+INK_MUTED = "#8A7570"     # secondary text
+LINE = "#EFE1DA"          # hairline borders
+PRIMARY = "#C1594A"       # terracotta — buttons, links, code digits
+ACCENT = "#E3A857"        # warm gold — logo gradient partner
 
 
 def _require_smtp_configured() -> None:
@@ -62,37 +77,45 @@ def _build_otp_message(email: str, otp: str) -> EmailMessage:
     html = f"""\
 <!DOCTYPE html>
 <html>
-  <body style="margin:0;padding:0;background-color:#F4EFE6;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4EFE6;padding:40px 0;">
+  <body style="margin:0;padding:0;background-color:{BLUSH_BG};font-family:Georgia,'Times New Roman',serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:{BLUSH_BG};padding:40px 0;">
       <tr>
         <td align="center">
-          <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(43,27,26,0.08);">
+          <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background-color:{SURFACE};border-radius:16px;overflow:hidden;border:1px solid {LINE};">
 
+            <!-- Wordmark, set the same way it reads on the site: an
+                 italic serif "ever" fused to a plain-weight "after". -->
             <tr>
-              <td style="background-color:{BRAND_BG};padding:32px 40px;text-align:center;">
-                <span style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:26px;color:#ffffff;">ever</span><span style="font-size:22px;font-weight:600;color:{INK};letter-spacing:.5px;">after</span>
+              <td style="padding:36px 40px 28px;text-align:center;">
+                <span style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:28px;color:{PRIMARY};">ever</span><span style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:24px;font-weight:600;color:{INK};letter-spacing:.2px;">after</span>
               </td>
             </tr>
 
             <tr>
-              <td style="padding:40px 40px 8px;text-align:center;">
-                <p style="margin:0;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#9a8a86;">Verify your email</p>
-                <h1 style="margin:12px 0 0;font-size:22px;color:{INK};font-weight:600;">Enter this code to continue</h1>
+              <td style="padding:0 40px;">
+                <div style="height:1px;background-color:{LINE};"></div>
               </td>
             </tr>
 
             <tr>
-              <td style="padding:28px 40px;text-align:center;">
-                <div style="display:inline-block;padding:18px 28px;background-color:#FBF3E5;border:1px solid #F0DDBB;border-radius:10px;font-size:32px;font-weight:700;letter-spacing:8px;color:{BRAND_COLOR};">
+              <td style="padding:32px 40px 8px;text-align:center;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+                <p style="margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:{INK_MUTED};">Verify your email</p>
+                <h1 style="margin:12px 0 0;font-size:21px;color:{INK};font-weight:600;">Enter this code to continue</h1>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:26px 40px;text-align:center;">
+                <div style="display:inline-block;padding:16px 26px;background:linear-gradient(135deg,{ACCENT}1A,{PRIMARY}14);border:1px solid {LINE};border-radius:12px;font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:600;letter-spacing:8px;color:{PRIMARY};">
                   {otp_display}
                 </div>
               </td>
             </tr>
 
             <tr>
-              <td style="padding:0 40px 36px;text-align:center;">
-                <p style="margin:0;font-size:14px;line-height:1.6;color:#6b5a56;">
-                  This code expires in <strong>{expiry} minutes</strong>.
+              <td style="padding:0 40px 8px;text-align:center;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+                <p style="margin:0;font-size:13px;line-height:1.6;color:{INK_MUTED};">
+                  This code expires in <strong style="color:{INK};">{expiry} minutes</strong>.
                   If you didn't request it, you can safely ignore this email —
                   your account is still secure.
                 </p>
@@ -100,8 +123,9 @@ def _build_otp_message(email: str, otp: str) -> EmailMessage:
             </tr>
 
             <tr>
-              <td style="padding:24px 40px;background-color:#FAF6EF;text-align:center;border-top:1px solid #EFE6D8;">
-                <p style="margin:0;font-size:12px;color:#9a8a86;">
+              <td style="padding:28px 40px 32px;text-align:center;">
+                <div style="height:1px;background-color:{LINE};margin-bottom:24px;"></div>
+                <p style="margin:0;font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:11px;color:{INK_MUTED};">
                   Sent by EverAfter &middot; This is an automated message, please don't reply directly.
                 </p>
               </td>

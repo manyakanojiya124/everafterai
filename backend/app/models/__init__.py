@@ -5,13 +5,9 @@ from app.models.password_reset import PasswordResetToken
 from app.models.memory_person import MemoryPerson
 from app.models.memory_file import MemoryFile
 from app.models.chat_message import ChatMessage
+from app.models.memory_chunk import MemoryChunk
 
 __all__ = [
-    "User",
-    "RefreshToken",
-    "EmailVerificationToken",
-    "PasswordResetToken",
-    "MemoryPerson",
-    "MemoryFile",
-    "ChatMessage",
+    "User", "RefreshToken", "EmailVerificationToken", "PasswordResetToken",
+    "MemoryPerson", "MemoryFile", "ChatMessage", "MemoryChunk",
 ]

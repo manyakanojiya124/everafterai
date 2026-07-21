@@ -4,15 +4,17 @@ import { useEffect, useRef } from "react";
 
 import { AssistantBubble, CrisisCard, UserBubble } from "@/components/chat/chat-bubbles";
 import { TypingIndicator } from "@/components/ui/loading";
-import type { ChatMessage } from "@/lib/types";
+import type { ChatMessage, RetrievedSource } from "@/lib/types";
 
 export function ChatMessageList({
   messages,
   resourcesByMessageId,
+  sourcesByMessageId,
   isSending,
 }: {
   messages: ChatMessage[];
   resourcesByMessageId: Record<number, string[]>;
+  sourcesByMessageId: Record<number, RetrievedSource[]>;
   isSending: boolean;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -38,7 +40,13 @@ export function ChatMessageList({
           );
         }
 
-        return <AssistantBubble key={message.id} message={message} />;
+        return (
+          <AssistantBubble
+            key={message.id}
+            message={message}
+            sources={sourcesByMessageId[message.id]}
+          />
+        );
       })}
 
       {isSending && (

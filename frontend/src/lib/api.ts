@@ -274,6 +274,30 @@ export async function deleteCompanion(id: number) {
   return requestAuthed<unknown>(`/memory-people/${id}`, { method: "DELETE" });
 }
 
+/** POST /memory-people/{id}/profile-picture — dedicated avatar upload.
+ * Assumed to return the updated companion (same shape as GET/PATCH); the
+ * paste of the OpenAPI schema didn't include its response model. */
+export async function uploadCompanionProfilePicture(id: number, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    return await requestForm<MemoryPerson>(`/memory-people/${id}/profile-picture`, formData);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401 && getAccessToken()) {
+      await refresh();
+      return requestForm<MemoryPerson>(`/memory-people/${id}/profile-picture`, formData);
+    }
+    throw error;
+  }
+}
+
+export async function deleteCompanionProfilePicture(id: number) {
+  return requestAuthed<MemoryPerson>(`/memory-people/${id}/profile-picture`, {
+    method: "DELETE",
+  });
+}
+
 // ============================================================================
 // Memory Vault — /api/v1/memory-people/{id}/files
 // ============================================================================

@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 from app.repositories.chat_repository import create_message, get_recent_messages, get_all_messages, delete_conversation
 from app.services.memory_person_service import get_companion
 from app.services.safety_service import (
-    detect_crisis, detect_dependency_language, build_system_prompt,
-    CRISIS_RESPONSE, DEPENDENCY_REMINDER,
+    detect_crisis, detect_dependency_language, build_system_prompt, CRISIS_RESPONSE, DEPENDENCY_REMINDER,
 )
 from app.services.llm_service import generate_reply
+from app.services.retrieval_service import retrieve_relevant_chunks, format_chunks_for_prompt
 
 
 def _history_as_llm_messages(messages) -> list[dict]:
@@ -26,11 +26,15 @@ def send_message(db: Session, user_id: int, companion_id: int, user_text: str):
             db, memory_person_id=companion.id, user_id=user_id, role="assistant",
             content=CRISIS_RESPONSE, is_safety_response=True,
         )
-        return user_message, assistant_message, True
+        return user_message, assistant_message, True, []
+
+    # RAG: pull the most relevant memory chunks for this specific question
+    retrieved_chunks = retrieve_relevant_chunks(db, memory_person_id=companion.id, query=user_text)
+    retrieved_context = format_chunks_for_prompt(retrieved_chunks)
 
     history = get_recent_messages(db, companion.id, user_id, limit=20)
     turn_count = len(history)
-    system_prompt = build_system_prompt(companion, turn_count)
+    system_prompt = build_system_prompt(companion, turn_count, retrieved_context)
 
     reply_text = generate_reply(system_prompt, _history_as_llm_messages(history[:-1]), user_text)
 
@@ -41,7 +45,11 @@ def send_message(db: Session, user_id: int, companion_id: int, user_text: str):
         db, memory_person_id=companion.id, user_id=user_id, role="assistant", content=reply_text,
     )
 
-    return user_message, assistant_message, False
+    sources = [
+        {"source_type": c.source_type, "source_label": c.source_label, "snippet": c.content[:180]}
+        for c in retrieved_chunks
+    ]
+    return user_message, assistant_message, False, sources
 
 
 def get_history(db: Session, user_id: int, companion_id: int):

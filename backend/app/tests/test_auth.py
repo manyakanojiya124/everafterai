@@ -8,28 +8,20 @@ os.environ.setdefault("ALGORITHM", "HS256")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 os.environ.setdefault("GOOGLE_CLIENT_ID", "test-client-id")
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-import app.db.base  # Register all models.
 from app.core.security import decode_access_token, verify_password
-from app.db.database import Base
 from app.services.auth_service import (
     create_registered_session, login_user, refresh_user_session, register_user,
     send_email_verification, verify_email_otp,
 )
+from app.tests.conftest import make_sqlite_session
 
 
 class AuthServiceTests(unittest.TestCase):
     def setUp(self):
-        self.engine = create_engine("sqlite://")
-        Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
-        self.db = self.Session()
+        self.engine, self.db = make_sqlite_session()
 
     def tearDown(self):
         self.db.close()
-        Base.metadata.drop_all(self.engine)
         self.engine.dispose()
 
     def test_register_hashes_password_and_creates_session(self):

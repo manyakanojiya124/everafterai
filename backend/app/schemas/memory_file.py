@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Optional
-
 from pydantic import BaseModel, ConfigDict
 
 
@@ -20,6 +19,7 @@ class MemoryFileResponse(BaseModel):
     is_processed: bool
     processing_status: str
     processing_error: Optional[str] = None
+    chunk_count: int
     created_at: datetime
     updated_at: datetime
 

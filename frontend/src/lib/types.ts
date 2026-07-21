@@ -100,6 +100,7 @@ export type MemoryFile = {
   is_processed: boolean;
   processing_status: "pending" | "completed" | "failed" | string;
   processing_error: string | null;
+  chunk_count: number;
   created_at: string;
   updated_at: string;
 };
@@ -124,11 +125,18 @@ export type ChatHistory = {
   messages: ChatMessage[];
 };
 
+export type RetrievedSource = {
+  source_type: string;
+  source_label: string | null;
+  snippet: string;
+};
+
 export type ChatReply = {
   user_message: ChatMessage;
   assistant_message: ChatMessage;
   is_crisis_response: boolean;
   resources: string[] | null;
+  sources_used: RetrievedSource[];
 };
 
 // ----------------------------------------------------------------------------

@@ -2,9 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.oauth import GoogleTokenVerificationError, verify_google_id_token
-from app.repositories.user_repository import (
-    create_google_user, get_user_by_email, get_user_by_google_id, update_last_login,
-)
+from app.repositories.user_repository import create_google_user, get_user_by_email, get_user_by_google_id, update_last_login
 from app.services.auth_service import create_registered_session
 
 

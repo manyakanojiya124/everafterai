@@ -6,18 +6,12 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.security import (
-    create_access_token, create_refresh_token, hash_password, hash_refresh_token, verify_password,
-)
+from app.core.security import create_access_token, create_refresh_token, hash_password, hash_refresh_token, verify_password
 from app.repositories.token_repository import (
     create_refresh_token as create_stored_refresh_token, get_active_refresh_token, revoke_refresh_token,
 )
-from app.repositories.email_verification_repository import (
-    get_active_email_verification_token, replace_email_verification_token,
-)
-from app.repositories.user_repository import (
-    create_user, get_user_by_email, get_user_by_id, update_last_login,
-)
+from app.repositories.email_verification_repository import get_active_email_verification_token, replace_email_verification_token
+from app.repositories.user_repository import create_user, get_user_by_email, get_user_by_id, update_last_login
 from app.services.email_service import send_verification_otp
 
 
@@ -45,11 +39,7 @@ def _create_session(db: Session, user):
     )
     db.commit()
     return (
-        {
-            "access_token": create_access_token({"sub": str(user.id), "email": user.email}),
-            "token_type": "bearer",
-            "user": user,
-        },
+        {"access_token": create_access_token({"sub": str(user.id), "email": user.email}), "token_type": "bearer", "user": user},
         raw_refresh_token,
     )
 

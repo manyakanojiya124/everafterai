@@ -9,6 +9,9 @@ CATEGORY_MAP = {
     "document": settings.ALLOWED_DOCUMENT_TYPES.split(","),
 }
 
+# Mime types (within "document") that we know how to turn into RAG chunks today.
+TEXT_INGESTABLE_MIME_TYPES = {"text/plain", "application/json"}
+
 
 def classify_and_validate_mime(mime_type: str) -> str:
     for category, allowed in CATEGORY_MAP.items():

@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Camera, Trash2 } from "lucide-react";
 
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { PresenceAvatar } from "@/components/ui/presence-avatar";
 import {
   CompanionFormValues,
   companionFormSchema,
@@ -15,9 +17,91 @@ import {
 import { BasicInfoStep } from "@/components/wizard/steps/basic-info";
 import { AboutStep } from "@/components/wizard/steps/about";
 import { RelationshipStep } from "@/components/wizard/steps/relationship-step";
-import { useUpdateCompanion } from "@/hooks/use-companions";
+import {
+  useDeleteCompanionPhoto,
+  useUpdateCompanion,
+  useUploadCompanionPhoto,
+} from "@/hooks/use-companions";
 import { toast } from "@/components/ui/toaster";
+import { resolveFileUrl } from "@/lib/api";
 import type { MemoryPerson } from "@/lib/types";
+
+function AvatarUploader({ companion }: { companion: MemoryPerson }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const uploadPhoto = useUploadCompanionPhoto(companion.id);
+  const deletePhoto = useDeleteCompanionPhoto(companion.id);
+
+  async function handleSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      await uploadPhoto.mutateAsync(file);
+      toast.success("Photo updated.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to upload photo.");
+    }
+  }
+
+  async function handleRemove() {
+    try {
+      await deletePhoto.mutateAsync();
+      toast.success("Photo removed.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to remove photo.");
+    }
+  }
+
+  const isBusy = uploadPhoto.isPending || deletePhoto.isPending;
+
+  return (
+    <div className="flex items-center gap-4">
+      <div className="relative">
+        <PresenceAvatar
+          name={companion.full_name}
+          src={resolveFileUrl(companion.profile_picture)}
+          size="lg"
+          ring={false}
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={isBusy}
+          title="Change photo"
+          className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow transition-colors hover:bg-primary-hover disabled:opacity-60"
+        >
+          <Camera size={14} />
+        </button>
+      </div>
+
+      <div>
+        <input ref={inputRef} type="file" accept="image/*" hidden onChange={handleSelect} />
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          isLoading={uploadPhoto.isPending}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Camera size={14} />
+          Change photo
+        </Button>
+        {companion.profile_picture && (
+          <button
+            type="button"
+            onClick={handleRemove}
+            disabled={isBusy}
+            className="ml-3 inline-flex items-center gap-1 text-sm text-danger hover:underline disabled:opacity-60"
+          >
+            <Trash2 size={13} />
+            Remove
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function EditCompanionSheet({
   companion,
@@ -72,6 +156,7 @@ export function EditCompanionSheet({
     >
       <FormProvider {...methods}>
         <form onSubmit={onSubmit} className="space-y-10">
+          <AvatarUploader companion={companion} />
           <BasicInfoStep />
           <AboutStep />
           <RelationshipStep />

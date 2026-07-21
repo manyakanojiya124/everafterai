@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -10,6 +10,7 @@ from app.schemas.memory_person import MemoryPersonCreate, MemoryPersonResponse, 
 from app.services.memory_person_service import (
     create_companion, list_companions, get_companion, edit_companion, remove_companion,
 )
+from app.services.profile_picture_service import remove_profile_picture, upload_profile_picture
 
 router = APIRouter(prefix="/api/v1/memory-people", tags=["Memory People"])
 
@@ -42,3 +43,24 @@ def update_memory_person(
 @router.delete("/{companion_id}")
 def delete_memory_person(companion_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return remove_companion(db=db, user_id=current_user.id, companion_id=companion_id)
+
+
+# ==========================================================
+# Profile Picture
+# ==========================================================
+
+@router.post("/{companion_id}/profile-picture", response_model=MemoryPersonResponse)
+def upload_companion_profile_picture(
+    companion_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return upload_profile_picture(db, current_user.id, companion_id, file)
+
+
+@router.delete("/{companion_id}/profile-picture", response_model=MemoryPersonResponse)
+def delete_companion_profile_picture(
+    companion_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user),
+):
+    return remove_profile_picture(db, current_user.id, companion_id)

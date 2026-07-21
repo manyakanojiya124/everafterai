@@ -12,7 +12,7 @@ class ChatMessage(Base):
     memory_person_id = Column(Integer, ForeignKey("memory_people.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
-    role = Column(String(20), nullable=False)  # user | assistant | system
+    role = Column(String(20), nullable=False)
     content = Column(Text, nullable=False)
 
     is_crisis_flagged = Column(Boolean, default=False, server_default="false", nullable=False)

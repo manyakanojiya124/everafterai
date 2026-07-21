@@ -5,9 +5,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createCompanion,
   deleteCompanion,
+  deleteCompanionProfilePicture,
   getCompanion,
   getCompanions,
   updateCompanion,
+  uploadCompanionProfilePicture,
 } from "@/lib/api";
 import type {
   MemoryPerson,
@@ -71,6 +73,34 @@ export function useDeleteCompanion() {
         prev?.filter((person) => person.id !== id),
       );
       queryClient.removeQueries({ queryKey: companionKey(id) });
+    },
+  });
+}
+
+export function useUploadCompanionPhoto(id: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => uploadCompanionProfilePicture(id, file),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(companionKey(id), updated);
+      queryClient.setQueryData<MemoryPerson[]>(companionsKey, (prev) =>
+        prev?.map((person) => (person.id === id ? updated : person)),
+      );
+    },
+  });
+}
+
+export function useDeleteCompanionPhoto(id: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => deleteCompanionProfilePicture(id),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(companionKey(id), updated);
+      queryClient.setQueryData<MemoryPerson[]>(companionsKey, (prev) =>
+        prev?.map((person) => (person.id === id ? updated : person)),
+      );
     },
   });
 }

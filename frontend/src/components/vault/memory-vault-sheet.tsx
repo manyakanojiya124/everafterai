@@ -29,6 +29,7 @@ const FILTERS: { label: string; value: string }[] = [
   { label: "Voice", value: "voice" },
   { label: "Videos", value: "video" },
   { label: "Letters", value: "letter" },
+  { label: "Chats", value: "chat" },
 ];
 
 function FileGlyph({ file }: { file: MemoryFile }) {
@@ -111,7 +112,7 @@ export function MemoryVaultSheet({
         open={open}
         onClose={onClose}
         title="Memory Vault"
-        description="Photos, voice notes, videos and letters that help them sound more like them."
+        description="Photos, voice notes, videos, letters, and WhatsApp/chat exports — anything that helps them sound more like them."
         footer={
           <>
             <input
@@ -119,6 +120,7 @@ export function MemoryVaultSheet({
               type="file"
               multiple
               hidden
+              accept="image/*,audio/*,video/*,.txt,.json,.pdf,.docx,.doc"
               onChange={handleFilesSelected}
             />
             <Button
@@ -223,6 +225,7 @@ export function MemoryVaultSheet({
                     </p>
                     <p className="mt-0.5 text-[11px] text-ink-muted">
                       {bytesToSize(file.file_size)}
+                      {file.chunk_count > 0 && ` · ${file.chunk_count} indexed`}
                     </p>
                   </div>
                 </div>

@@ -1,6 +1,4 @@
-from sqlalchemy import (
-    Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Text, JSON,
-)
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Text, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -52,6 +50,7 @@ class MemoryPerson(Base):
     owner = relationship("User", back_populates="memory_people")
     files = relationship("MemoryFile", back_populates="memory_person", cascade="all, delete-orphan")
     chat_messages = relationship("ChatMessage", back_populates="memory_person", cascade="all, delete-orphan")
+    chunks = relationship("MemoryChunk", back_populates="memory_person", cascade="all, delete-orphan")
 
     @property
     def relationship(self):

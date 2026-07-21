@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-
 from app.models.memory_person import MemoryPerson
 from app.schemas.memory_person import MemoryPersonCreate, MemoryPersonUpdate
 

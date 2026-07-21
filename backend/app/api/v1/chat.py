@@ -16,12 +16,13 @@ def chat(
     companion_id: int, payload: ChatMessageCreate,
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
-    user_message, assistant_message, is_crisis = send_message(db, current_user.id, companion_id, payload.message)
+    user_message, assistant_message, is_crisis, sources = send_message(db, current_user.id, companion_id, payload.message)
     return {
         "user_message": user_message,
         "assistant_message": assistant_message,
         "is_crisis_response": is_crisis,
         "resources": CRISIS_RESOURCES if is_crisis else None,
+        "sources_used": sources,
     }
 
 

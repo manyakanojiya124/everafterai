@@ -14,9 +14,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         start = time.perf_counter()
         response = await call_next(request)
         duration_ms = (time.perf_counter() - start) * 1000
-        logger.info(
-            "%s %s -> %s (%.1fms) [%s]",
-            request.method, request.url.path, response.status_code, duration_ms, request_id,
-        )
+        logger.info("%s %s -> %s (%.1fms) [%s]", request.method, request.url.path, response.status_code, duration_ms, request_id)
         response.headers["X-Request-ID"] = request_id
         return response

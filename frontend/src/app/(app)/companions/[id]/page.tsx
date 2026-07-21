@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "@/components/ui/toaster";
 import { useCompanion } from "@/hooks/use-companions";
 import { useChatHistory, useClearChat, useSendChatMessage } from "@/hooks/use-chat";
+import type { RetrievedSource } from "@/lib/types";
 
 export default function CompanionChatPage() {
   const params = useParams<{ id: string }>();
@@ -28,6 +29,9 @@ export default function CompanionChatPage() {
   const [vaultOpen, setVaultOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
   const [resourcesByMessageId, setResourcesByMessageId] = useState<Record<number, string[]>>({});
+  const [sourcesByMessageId, setSourcesByMessageId] = useState<Record<number, RetrievedSource[]>>(
+    {},
+  );
 
   const messages = useMemo(() => history?.messages ?? [], [history]);
 
@@ -38,6 +42,12 @@ export default function CompanionChatPage() {
         setResourcesByMessageId((prev) => ({
           ...prev,
           [reply.assistant_message.id]: reply.resources as string[],
+        }));
+      }
+      if (reply.sources_used?.length) {
+        setSourcesByMessageId((prev) => ({
+          ...prev,
+          [reply.assistant_message.id]: reply.sources_used,
         }));
       }
     } catch (error) {
@@ -92,6 +102,7 @@ export default function CompanionChatPage() {
         <ChatMessageList
           messages={messages}
           resourcesByMessageId={resourcesByMessageId}
+          sourcesByMessageId={sourcesByMessageId}
           isSending={sendMessage.isPending}
         />
       )}

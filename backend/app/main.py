@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,11 +15,9 @@ from app.api.v1.memory_files import router as memory_files_router
 from app.api.v1.chat import router as chat_router
 from app.middleware.logging import RequestLoggingMiddleware
 
-import os
-
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
-app = FastAPI(title="EverAfter AI", version="1.0.0")
+app = FastAPI(title="EverAfter AI", version="1.1.0")
 
 # ==========================================================
 # Middleware
@@ -55,12 +55,7 @@ app.include_router(chat_router)
 
 @app.get("/")
 def home():
-    return {
-        "status": "running",
-        "application": "EverAfter AI",
-        "version": "1.0.0",
-        "message": "Backend is running successfully",
-    }
+    return {"status": "running", "application": "EverAfter AI", "version": "1.1.0", "message": "Backend is running successfully"}
 
 
 @app.get("/health")

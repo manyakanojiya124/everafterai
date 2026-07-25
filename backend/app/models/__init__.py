@@ -6,8 +6,10 @@ from app.models.memory_person import MemoryPerson
 from app.models.memory_file import MemoryFile
 from app.models.chat_message import ChatMessage
 from app.models.memory_chunk import MemoryChunk
+from app.models.voice_reference import VoiceReference
+from app.models.message_voice import MessageVoice
 
 __all__ = [
     "User", "RefreshToken", "EmailVerificationToken", "PasswordResetToken",
-    "MemoryPerson", "MemoryFile", "ChatMessage", "MemoryChunk",
+    "MemoryPerson", "MemoryFile", "ChatMessage", "MemoryChunk", "VoiceReference", "MessageVoice"
 ]

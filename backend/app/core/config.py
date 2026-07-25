@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     RAG_CHUNK_OVERLAP_CHARS: int = 150
     RAG_TOP_K: int = 5
 
+    VOICE_ENABLED: bool = False
+    XTTS_MODEL_NAME: str = "tts_models/multilingual/multi-dataset/xtts_v2"
+    XTTS_DEVICE: str = "auto"  # "auto" | "cuda" | "cpu"
+
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parents[2] / ".env",
         extra="ignore"

@@ -140,6 +140,39 @@ export type ChatReply = {
 };
 
 // ----------------------------------------------------------------------------
+// Voice Cloning
+// ----------------------------------------------------------------------------
+
+/** Generic lifecycle string from the backend — treated defensively since it
+ * isn't enumerated in the OpenAPI schema. */
+export type VoiceStatus = string;
+
+export type VoiceReference = {
+  id: number;
+  memory_person_id: number;
+  source: string;
+  original_name: string;
+  duration_seconds: number | null;
+  status: VoiceStatus;
+  validation_note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MessageVoice = {
+  id: number;
+  chat_message_id: number;
+  status: VoiceStatus;
+  trigger: string;
+  duration_seconds: number | null;
+  error: string | null;
+  device_used: string | null;
+  generation_ms: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// ----------------------------------------------------------------------------
 // Errors
 // ----------------------------------------------------------------------------
 

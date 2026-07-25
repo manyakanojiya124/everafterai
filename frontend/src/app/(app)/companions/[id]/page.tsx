@@ -100,6 +100,7 @@ export default function CompanionChatPage() {
         />
       ) : (
         <ChatMessageList
+          companionId={companion.id}
           messages={messages}
           resourcesByMessageId={resourcesByMessageId}
           sourcesByMessageId={sourcesByMessageId}

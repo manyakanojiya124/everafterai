@@ -7,11 +7,13 @@ import { TypingIndicator } from "@/components/ui/loading";
 import type { ChatMessage, RetrievedSource } from "@/lib/types";
 
 export function ChatMessageList({
+  companionId,
   messages,
   resourcesByMessageId,
   sourcesByMessageId,
   isSending,
 }: {
+  companionId: number;
   messages: ChatMessage[];
   resourcesByMessageId: Record<number, string[]>;
   sourcesByMessageId: Record<number, RetrievedSource[]>;
@@ -43,6 +45,7 @@ export function ChatMessageList({
         return (
           <AssistantBubble
             key={message.id}
+            companionId={companionId}
             message={message}
             sources={sourcesByMessageId[message.id]}
           />

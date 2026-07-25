@@ -8,6 +8,7 @@ import { Camera, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { PresenceAvatar } from "@/components/ui/presence-avatar";
+import { VoiceReferenceCard } from "@/components/companions/voice-reference-card";
 import {
   CompanionFormValues,
   companionFormSchema,
@@ -157,6 +158,7 @@ export function EditCompanionSheet({
       <FormProvider {...methods}>
         <form onSubmit={onSubmit} className="space-y-10">
           <AvatarUploader companion={companion} />
+          <VoiceReferenceCard companionId={companion.id} />
           <BasicInfoStep />
           <AboutStep />
           <RelationshipStep />

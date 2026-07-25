@@ -10,6 +10,7 @@ import {
 
 import { cn, formatFullDateTime } from "@/lib/utils";
 import type { ChatMessage, RetrievedSource } from "@/lib/types";
+import { VoicePlayButton } from "@/components/chat/voice-play-button";
 
 function AiMonogram() {
   return (
@@ -64,9 +65,11 @@ function SourceChips({ sources }: { sources?: RetrievedSource[] }) {
 }
 
 export function AssistantBubble({
+  companionId,
   message,
   sources,
 }: {
+  companionId: number;
   message: ChatMessage;
   sources?: RetrievedSource[];
 }) {
@@ -80,6 +83,7 @@ export function AssistantBubble({
         >
           <p className="whitespace-pre-wrap">{message.content}</p>
         </div>
+        <VoicePlayButton companionId={companionId} messageId={message.id} />
       </div>
       <SourceChips sources={sources} />
     </div>

@@ -7,9 +7,11 @@ import type {
   MemoryPersonCreateInput,
   MemoryPersonUpdateInput,
   MessageResponse,
+  MessageVoice,
   RegistrationResponse,
   User,
   ValidationError,
+  VoiceReference,
 } from "./types";
 
 // ============================================================================
@@ -164,6 +166,46 @@ async function requestForm<T>(
   }
 
   return handleResponse<T>(response);
+}
+
+async function requestBlobOnce(path: string): Promise<Blob> {
+  const headers = new Headers();
+  const token = getAccessToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      headers,
+      credentials: "include",
+    });
+  } catch {
+    throw new ApiError(
+      "Couldn't reach the server. Check your connection and try again.",
+      0,
+    );
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const { message, details } = friendlyMessage(body?.detail);
+    throw new ApiError(message, response.status, details);
+  }
+
+  return response.blob();
+}
+
+/** For binary responses (audio, etc.) — same 401-refresh-retry as requestAuthed. */
+async function requestBlob(path: string): Promise<Blob> {
+  try {
+    return await requestBlobOnce(path);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401 && getAccessToken()) {
+      await refresh();
+      return requestBlobOnce(path);
+    }
+    throw error;
+  }
 }
 
 // ============================================================================
@@ -356,6 +398,75 @@ export async function clearChat(companionId: number) {
   return requestAuthed<unknown>(`/memory-people/${companionId}/chat`, {
     method: "DELETE",
   });
+}
+
+// ============================================================================
+// Voice Cloning — /api/v1/memory-people/{id}/voice-reference
+//                  /api/v1/memory-people/{id}/chat/{messageId}/voice
+// ============================================================================
+
+export async function getVoiceReference(companionId: number) {
+  return requestAuthed<VoiceReference>(`/memory-people/${companionId}/voice-reference`);
+}
+
+export async function uploadVoiceReference(companionId: number, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    return await requestForm<VoiceReference>(
+      `/memory-people/${companionId}/voice-reference`,
+      formData,
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401 && getAccessToken()) {
+      await refresh();
+      return requestForm<VoiceReference>(
+        `/memory-people/${companionId}/voice-reference`,
+        formData,
+      );
+    }
+    throw error;
+  }
+}
+
+export async function deleteVoiceReference(companionId: number) {
+  return requestAuthed<unknown>(`/memory-people/${companionId}/voice-reference`, {
+    method: "DELETE",
+  });
+}
+
+/** Kicks off (or re-triggers) voice generation for one chat message. */
+export async function generateMessageVoice(companionId: number, messageId: number) {
+  return requestAuthed<MessageVoice>(
+    `/memory-people/${companionId}/chat/${messageId}/voice`,
+    { method: "POST" },
+  );
+}
+
+/** Poll this for status while generation is in progress. */
+export async function getMessageVoice(companionId: number, messageId: number) {
+  return requestAuthed<MessageVoice>(`/memory-people/${companionId}/chat/${messageId}/voice`);
+}
+
+/** Fetches the generated audio as a Blob — build an object URL from it for
+ * an <audio> element, since the endpoint needs a Bearer header a plain
+ * <audio src> can't send. */
+export async function fetchMessageVoiceAudio(companionId: number, messageId: number) {
+  return requestBlob(`/memory-people/${companionId}/chat/${messageId}/voice/audio`);
+}
+
+const VOICE_TERMINAL_SUCCESS = new Set(["completed", "ready", "done", "succeeded", "success"]);
+const VOICE_TERMINAL_FAILURE = new Set(["failed", "error", "errored"]);
+
+export function isVoiceTerminal(status: string): boolean {
+  const s = status.toLowerCase();
+  return VOICE_TERMINAL_SUCCESS.has(s) || VOICE_TERMINAL_FAILURE.has(s) || s.includes("fail");
+}
+
+export function isVoiceFailed(status: string): boolean {
+  const s = status.toLowerCase();
+  return VOICE_TERMINAL_FAILURE.has(s) || s.includes("fail");
 }
 
 /** Resolve a possibly-relative file path returned by the backend into a full URL. */

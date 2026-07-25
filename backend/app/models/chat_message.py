@@ -14,7 +14,10 @@ class ChatMessage(Base):
 
     role = Column(String(20), nullable=False)
     content = Column(Text, nullable=False)
-
+    voice = relationship(
+        "MessageVoice", back_populates="chat_message",
+        uselist=False, cascade="all, delete-orphan",
+    )
     is_crisis_flagged = Column(Boolean, default=False, server_default="false", nullable=False)
     is_safety_response = Column(Boolean, default=False, server_default="false", nullable=False)
 

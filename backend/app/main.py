@@ -14,6 +14,8 @@ from app.api.v1.memory_people import router as memory_people_router
 from app.api.v1.memory_files import router as memory_files_router
 from app.api.v1.chat import router as chat_router
 from app.middleware.logging import RequestLoggingMiddleware
+from app.api.v1.voice import reference_router as voice_reference_router
+from app.api.v1.voice import message_voice_router
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
@@ -48,7 +50,8 @@ app.include_router(users_router)
 app.include_router(memory_people_router)
 app.include_router(memory_files_router)
 app.include_router(chat_router)
-
+app.include_router(voice_reference_router)
+app.include_router(message_voice_router)
 # ==========================================================
 # Root & Health
 # ==========================================================

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -13,10 +13,12 @@ router = APIRouter(prefix="/api/v1/memory-people/{companion_id}/chat", tags=["Ch
 
 @router.post("", response_model=ChatReplyResponse)
 def chat(
-    companion_id: int, payload: ChatMessageCreate,
+    companion_id: int, payload: ChatMessageCreate, background_tasks: BackgroundTasks,
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
-    user_message, assistant_message, is_crisis, sources = send_message(db, current_user.id, companion_id, payload.message)
+    user_message, assistant_message, is_crisis, sources = send_message(
+        db, current_user.id, companion_id, payload.message, background_tasks,
+    )
     return {
         "user_message": user_message,
         "assistant_message": assistant_message,

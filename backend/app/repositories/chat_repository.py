@@ -30,3 +30,10 @@ def delete_conversation(db: Session, memory_person_id: int, user_id: int) -> Non
         .filter(ChatMessage.memory_person_id == memory_person_id, ChatMessage.user_id == user_id)
         .delete(synchronize_session=False))
     db.commit()
+
+def get_message_by_id(db: Session, *, message_id: int, memory_person_id: int):
+    return (
+        db.query(ChatMessage)
+        .filter(ChatMessage.id == message_id, ChatMessage.memory_person_id == memory_person_id)
+        .first()
+    )
